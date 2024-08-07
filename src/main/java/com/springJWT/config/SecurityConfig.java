@@ -3,6 +3,7 @@ package com.springJWT.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.springJWT.filter.JwtAuthenticationFilter;
@@ -26,6 +28,9 @@ public class SecurityConfig {
 
 	@Autowired
 	private JwtAuthenticationFilter authenticationFilter;
+	
+	@Autowired
+	private CustomAccessDeniedHandler customAccessDeniedHandler;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,6 +38,8 @@ public class SecurityConfig {
 				.authorizeHttpRequests(req -> req.requestMatchers("/login/**", "/register/**").permitAll()
 						.requestMatchers("/admin_only/**").hasAuthority("ADMIN").anyRequest().authenticated())
 				.userDetailsService(userDetailsServiceImpl)
+				.exceptionHandling(e->e.accessDeniedHandler(customAccessDeniedHandler)
+						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class).build();
 	}
